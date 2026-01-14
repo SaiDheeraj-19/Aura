@@ -253,8 +253,19 @@ elif st.session_state.state == "READY":
                     video_id = yt_id_match.group(1)
             
             if video_id:
-                # 1. Container for the API to target
-                st.markdown(f'<div id="aura-player-target"></div>', unsafe_allow_html=True)
+                # 1. Direct Iframe Injection (Visible immediately) + API Target
+                st.markdown(f"""
+                <script src="https://www.youtube.com/iframe_api"></script>
+                <iframe id="aura-player-target" 
+                        width="100%" 
+                        height="450" 
+                        src="https://www.youtube.com/embed/{video_id}?enablejsapi=1&rel=0&playsinline=1" 
+                        frameborder="0" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen 
+                        style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                </iframe>
+                """, unsafe_allow_html=True)
             else:
                 st.video(video_src)
                 
@@ -411,32 +422,33 @@ elif st.session_state.state == "READY":
             st.markdown(f"""
             <script>
                 // 1. YouTube API Boilerplate
-                var tag = document.createElement('script');
-                tag.src = "https://www.youtube.com/iframe_api";
-                var firstScriptTag = document.getElementsByTagName('script')[0];
-                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
                 var player;
                 var auraSyncInterval = null;
 
+                // Wait for API to load
+                if (typeof YT === 'undefined' || typeof YT.Player === 'undefined') {{
+                    var tag = document.createElement('script');
+                    tag.src = "https://www.youtube.com/iframe_api";
+                    var firstScriptTag = document.getElementsByTagName('script')[0];
+                    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                }}
+
                 function onYouTubeIframeAPIReady() {{
+                    console.log("AURA: YT API Ready, attaching to iframe...");
                     player = new YT.Player('aura-player-target', {{
-                        height: '450',
-                        width: '100%',
-                        videoId: '{video_id}',
-                        playerVars: {{
-                            'playsinline': 1,
-                            'rel': 0,
-                            'enablejsapi': 1
-                        }},
                         events: {{
                             'onReady': onPlayerReady
                         }}
                     }});
                 }}
+                
+                // Fallback: If API already ready
+                if (window.YT && window.YT.Player) {{
+                    onYouTubeIframeAPIReady();
+                }}
 
                 function onPlayerReady(event) {{
-                    console.log("AURA: YouTube Player Ready");
+                    console.log("AURA: Player Connected!");
                     startSync();
                 }}
                 
