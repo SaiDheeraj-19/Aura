@@ -50,8 +50,8 @@ class AssemblyAITranscriber:
         'gemini-2.0-flash-exp',
         'gemini-2.0-flash',
         'gemini-2.0-flash-lite-preview-02-05',
-        'gemini-exp-1206',
-        'gemini-2.5-flash-lite-preview-09-2025'
+        'gemini-flash-latest', # Added stable fallback
+        'gemini-1.5-flash', # Explicit 1.5 fallback
     ]
 
     def _generate_with_retry(self, prompt: str, retries_per_model: int = 2):
@@ -202,7 +202,7 @@ class AssemblyAITranscriber:
         
         segments = transcription_result.get('segments', [])
         total_segments = len(segments)
-        batch_size = 25 
+        batch_size = 15 # Reduced to prevent timeout 
         
         SCRIPT_MAP = {
             'Telugu': 'Telugu (తెలుగు)',
@@ -235,19 +235,20 @@ class AssemblyAITranscriber:
             safe_print(f"   ⏳ [BATCH] {int(i/batch_size) + 1} / {int((total_segments-1)/batch_size) + 1}", flush=True)
             
             prompt = f"""You are the AURA Multilingual Engine.
-TASK: Translate the following segments from {source_language} to {target_script}.
+TASK: Translate the segments below from {source_language} to {target_script}.
 
-### RIGID RULES:
-1. OUTPUT FORMAT: return ONLY a pipe-delimited list.
-   FORMAT: ID | TRANSLATED_TEXT
-2. NO JSON. NO MARKDOWN. NO HEADERS. Just the lines.
-3. FAITHFULNESS: Translate exactly. Do not summarize.
-4. MATCHING: Return exactly one line per input ID.
+STRICT REQUIREMENTS:
+1. TRANSLATE the content. Do NOT just copy the English text.
+2. OUTPUT FORMAT: Pipe-delimited list (ID | TRANSLATED_TEXT).
+3. NO JSON, NO MARKDOWN, NO EXPLANATIONS.
+4. Keep the same ID for each segment.
 
-### INPUT:
+Input format: ID | Source Text
+------------------------------
 {indexed_batch_text}
+------------------------------
 
-### OUTPUT (ID | TRANSLATED_TEXT):
+Output (ID | Translated Text):
 """
             try:
                 response = self._generate_with_retry(prompt)
