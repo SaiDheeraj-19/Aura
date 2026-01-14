@@ -1,0 +1,21 @@
+# Core Framework
+streamlit>=1.30.0
+
+# Audio Processing
+yt-dlp>=2024.0.0
+moviepy>=1.0.3
+ffmpeg-python>=0.2.0
+soundfile>=0.12.0
+
+# Google Gemini
+google-generativeai>=0.3.0
+
+# AssemblyAI
+assemblyai>=0.40.0
+
+# Utilities
+python-dotenv>=1.0.0
+pillow>=10.0.0
+requests>=2.31.0
+numpy>=1.24.0
+scipy>=1.10.0
